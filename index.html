@@ -30,13 +30,13 @@
         <label>Nome da Conversa/Grupo:</label>
         <input type="text" id="nome" value="Anny Óptica — Web e Tráfego" required>
 
-        <label>Telefone (com DDD) ou Link do Grupo:</label>
-        <input type="text" id="destino" placeholder="Ex: https://chat.whatsapp.com/... ou 5584921466248" required>
+        <label>Telefone (apenas números com DDD) ou Link do Grupo:</label>
+        <input type="text" id="destino" placeholder="Ex: https://chat.whatsapp.com/... ou 5584921466248" value="5584921466248" required>
 
         <label>Texto da Mensagem:</label>
         <textarea id="mensagem" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
 
-        <label>Subir Imagens/Fotos (Pode selecionar várias):</label>
+        <label>Subir Imagens/Fotos (Opcional):</label>
         <input type="file" id="fotos" accept="image/*" multiple>
 
         <label>Data e Hora do Disparo:</label>
@@ -45,7 +45,7 @@
         <button type="button" id="btnSalvar" onclick="enviarFormulario()">Agendar e Processar Fotos</button>
       </form>
       
-      <div id="statusForm" style="color: green; text-align: center; margin-top: 10px; font-weight: bold;"></div>
+      <div id="statusForm" style="text-align: center; margin-top: 10px; font-weight: bold;"></div>
 
       <hr>
 
@@ -62,6 +62,7 @@
         var inputFotos = document.getElementById('fotos');
         var dataHora = document.getElementById('dataHora').value;
         var btnSalvar = document.getElementById('btnSalvar');
+        var statusDiv = document.getElementById('statusForm');
 
         if(!nome || !destino || !mensagem || !dataHora) {
           alert('Preencha os campos obrigatórios!');
@@ -69,29 +70,50 @@
         }
 
         btnSalvar.disabled = true;
-        btnSalvar.innerText = 'Enviando e salvando imagens... Aguarde...';
+        btnSalvar.innerText = 'Enviando... Aguarde...';
+        statusDiv.style.color = '#075e54';
+        statusDiv.innerText = 'Processando dados e arquivos...';
 
-        var arquivosBase64 = [];
-        if (inputFotos.files.length > 0) {
-          for (var i = 0; i < inputFotos.files.length; i++) {
-            var file = inputFotos.files[i];
-            var base64 = await converterParaBase64(file);
-            arquivosBase64.push({
-              nome: file.name,
-              mimeType: file.type,
-              bytes: base64.split(',')[1]
-            });
+        try {
+          var arquivosBase64 = [];
+          if (inputFotos.files.length > 0) {
+            for (var i = 0; i < inputFotos.files.length; i++) {
+              var file = inputFotos.files[i];
+              var base64 = await converterParaBase64(file);
+              arquivosBase64.push({
+                nome: file.name,
+                mimeType: file.type,
+                bytes: base64.split(',')[1]
+              });
+            }
           }
-        }
 
-        google.script.run.withSuccessHandler(function(resposta) {
-          document.getElementById('statusForm').innerText = resposta;
-          document.getElementById('formAgendamento').reset();
-          document.getElementById('nome').value = 'Anny Óptica — Web e Tráfego';
+          google.script.run
+            .withSuccessHandler(function(resposta) {
+              statusDiv.style.color = 'green';
+              statusDiv.innerText = resposta;
+              document.getElementById('formAgendamento').reset();
+              document.getElementById('nome').value = 'Anny Óptica — Web e Tráfego';
+              document.getElementById('destino').value = '5584921466248';
+              btnSalvar.disabled = false;
+              btnSalvar.innerText = 'Agendar e Processar Fotos';
+              carregarPendentes();
+              setTimeout(() => statusDiv.innerText = '', 4000);
+            })
+            .withFailureHandler(function(erro) {
+              statusDiv.style.color = 'red';
+              statusDiv.innerText = 'Erro: ' + erro.message;
+              btnSalvar.disabled = false;
+              btnSalvar.innerText = 'Agendar e Processar Fotos';
+            })
+            .salvarAgendamentoComUpload(nome, destino, mensagem, arquivosBase64, dataHora);
+
+        } catch (err) {
+          statusDiv.style.color = 'red';
+          statusDiv.innerText = 'Erro ao processar imagem: ' + err.message;
           btnSalvar.disabled = false;
           btnSalvar.innerText = 'Agendar e Processar Fotos';
-          setTimeout(() => document.getElementById('statusForm').innerText = '', 4000);
-        }).salvarAgendamentoComUpload(nome, destino, mensagem, arquivosBase64, dataHora);
+        }
       }
 
       function converterParaBase64(file) {
@@ -154,7 +176,7 @@
         if (destino.includes('chat.whatsapp.com')) {
           url = destino;
         } else {
-          var num = destino.replace(/\D/g, '');
+          var num = destino.replace(/\Dg/g, '');
           url = 'https://api.whatsapp.com/send?phone=' + num + '&text=' + textoCodificado;
         }
         
