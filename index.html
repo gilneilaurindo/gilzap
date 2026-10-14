@@ -15,15 +15,16 @@
       .card-pendente { background: #f0f2f5; border-left: 5px solid #25d366; padding: 15px; margin-top: 15px; border-radius: 5px; }
       .btn-disparar { background-color: #075e54; margin-top: 8px; }
       .btn-copiar { background-color: #34b7f1; margin-top: 6px; }
-      .btn-foto { background-color: #128c7e; margin-top: 6px; }
+      .btn-foto { background-color: #128c7e; margin-top: 6px; text-decoration: none; display: inline-block; padding: 8px 12px; color: white; border-radius: 4px; text-align: center; font-size: 14px; }
       hr { margin: 25px 0; border: 0; border-top: 1px solid #ddd; }
-      .botoes-acao { display: flex; gap: 8px; flex-wrap: wrap; }
+      .botoes-acao { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
       .botoes-acao button { flex: 1; min-width: 140px; }
+      .fotos-container { margin-top: 8px; }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2>Agendar Disparo (Grupo ou Contato)</h2>
+      <h2>Agendar Disparo WhatsApp</h2>
       
       <form id="formAgendamento">
         <label>Nome da Conversa/Grupo:</label>
@@ -35,16 +36,16 @@
         <label>Texto da Mensagem:</label>
         <textarea id="mensagem" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
 
-        <label>Link da Foto/Imagem (Opcional):</label>
-        <input type="url" id="linkFoto" placeholder="https://exemplo.com/imagem.jpg">
+        <label>Subir Imagens/Fotos (Pode selecionar várias):</label>
+        <input type="file" id="fotos" accept="image/*" multiple>
 
         <label>Data e Hora do Disparo:</label>
         <input type="datetime-local" id="dataHora" required>
 
-        <button type="button" onclick="enviarFormulario()">Agendar Mensagem</button>
+        <button type="button" id="btnSalvar" onclick="enviarFormulario()">Agendar e Processar Fotos</button>
       </form>
       
-      <div id="statusForm" style="color: green; text-align: center; margin-top: 10px;"></div>
+      <div id="statusForm" style="color: green; text-align: center; margin-top: 10px; font-weight: bold;"></div>
 
       <hr>
 
@@ -54,24 +55,52 @@
     </div>
 
     <script>
-      function enviarFormulario() {
+      async function enviarFormulario() {
         var nome = document.getElementById('nome').value;
         var destino = document.getElementById('destino').value;
         var mensagem = document.getElementById('mensagem').value;
-        var linkFoto = document.getElementById('linkFoto').value;
+        var inputFotos = document.getElementById('fotos');
         var dataHora = document.getElementById('dataHora').value;
+        var btnSalvar = document.getElementById('btnSalvar');
 
         if(!nome || !destino || !mensagem || !dataHora) {
           alert('Preencha os campos obrigatórios!');
           return;
         }
 
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'Enviando e salvando imagens... Aguarde...';
+
+        var arquivosBase64 = [];
+        if (inputFotos.files.length > 0) {
+          for (var i = 0; i < inputFotos.files.length; i++) {
+            var file = inputFotos.files[i];
+            var base64 = await converterParaBase64(file);
+            arquivosBase64.push({
+              nome: file.name,
+              mimeType: file.type,
+              bytes: base64.split(',')[1]
+            });
+          }
+        }
+
         google.script.run.withSuccessHandler(function(resposta) {
           document.getElementById('statusForm').innerText = resposta;
           document.getElementById('formAgendamento').reset();
           document.getElementById('nome').value = 'Anny Óptica — Web e Tráfego';
-          setTimeout(() => document.getElementById('statusForm').innerText = '', 3000);
-        }).salvarAgendamento(nome, destino, mensagem, linkFoto, dataHora);
+          btnSalvar.disabled = false;
+          btnSalvar.innerText = 'Agendar e Processar Fotos';
+          setTimeout(() => document.getElementById('statusForm').innerText = '', 4000);
+        }).salvarAgendamentoComUpload(nome, destino, mensagem, arquivosBase64, dataHora);
+      }
+
+      function converterParaBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
       }
 
       function carregarPendentes() {
@@ -88,14 +117,23 @@
             var card = document.createElement('div');
             card.className = 'card-pendente';
 
+            var linksHtml = '';
+            if (item.linkFoto) {
+              var links = item.linkFoto.split(' | ');
+              linksHtml = '<div class="fotos-container"><strong>Fotos enviadas:</strong><br>';
+              links.forEach(function(url, idx) {
+                linksHtml += `<a class="btn-foto" href="${url}" target="_blank">🖼️ Abrir Foto ${idx + 1}</a> `;
+              });
+              linksHtml += '</div>';
+            }
+
             card.innerHTML = `
               <strong>Destino:</strong> ${item.nome}<br>
               <strong>Mensagem:</strong> ${item.mensagem}<br>
-              ${item.linkFoto ? '<strong>Foto:</strong> <a href="' + item.linkFoto + '" target="_blank">Ver / Baixar Imagem</a><br>' : ''}
+              ${linksHtml}
               
               <div class="botoes-acao">
                 <button class="btn-copiar" onclick="copiarTexto('${encodeURIComponent(item.mensagem)}')">📋 1. Copiar Texto</button>
-                ${item.linkFoto ? `<button class="btn-foto" onclick="window.open('${item.linkFoto}', '_blank')">🖼️ Ver Foto</button>` : ''}
                 <button class="btn-disparar" onclick="abrirEConcluir('${item.destino}', '${encodeURIComponent(item.mensagem)}', ${item.linha})">🚀 2. Abrir Grupo / Chat</button>
               </div>
             `;
