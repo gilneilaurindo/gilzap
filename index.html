@@ -11,7 +11,7 @@
       .card { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); margin-bottom: 25px; }
       h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--light); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
       label { font-weight: 600; display: block; margin-top: 15px; color: var(--secondary); font-size: 14px; }
-      input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ccd0d5; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+      input, textarea { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ccd0d5; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
       button { background-color: var(--accent); color: white; border: none; padding: 14px; width: 100%; margin-top: 25px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
       button:hover { background-color: #1ebe5d; }
       .campanha-item { background: #f8f9fa; border-left: 5px solid var(--accent); padding: 18px; margin-top: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
@@ -25,34 +25,32 @@
   <body>
     <div class="wrapper">
       
-      <!-- PAINEL DE CRIAÇÃO -->
       <div class="card">
-        <h2>🚀 Nova Campanha de Disparo <span class="tag">Modo Profissional</span></h2>
+        <h2>🚀 Nova Campanha <span class="tag">WhatsApp Profissional</span></h2>
         
         <form id="formCampanha">
           <label>Nome da Campanha (Identificação interna):</label>
-          <input type="text" id="nomeCampanha" placeholder="Ex: Promoção Relâmpago Óculos 50% OFF" required>
+          <input type="text" id="nomeCampanha" value="Anny Óptica — Web e Tráfego" required>
 
           <label>Destinatário (Telefone com DDD ou Link do Grupo do WhatsApp):</label>
-          <input type="text" id="destino" placeholder="Ex: 5584921466248 ou https://chat.whatsapp.com/..." required>
+          <input type="text" id="destino" value="5584921466248" placeholder="Ex: 5584921466248 ou https://chat.whatsapp.com/..." required>
 
           <label>Texto da Mensagem (Suporta formatação e emojis):</label>
-          <textarea id="mensagem" rows="5" placeholder="Olá *cliente*! Confira nossas novidades..." required></textarea>
+          <textarea id="mensagem" rows="4" placeholder="Digite sua mensagem aqui..." required></textarea>
 
-          <label>Anexar Imagens / Criativos (Pode selecionar várias):</label>
+          <label>Anexar Imagens / Criativos (Opcional - pode selecionar várias):</label>
           <input type="file" id="imagens" accept="image/*" multiple>
 
           <label>Data e Hora Programada para o Disparo:</label>
           <input type="datetime-local" id="dataHora" required>
 
-          <button type="button" id="btnSalvar" onclick="agendarCampanha()">Programar Campanha</button>
+          <button type="button" id="btnSalvar" onclick="executarAgendamento()">Programar Campanha</button>
         </form>
         <div id="statusMsg" style="text-align: center; margin-top: 15px; font-weight: bold;"></div>
       </div>
 
-      <!-- FILA DE CAMPANHAS PROGRAMADAS -->
       <div class="card">
-        <h2>📅 Fila de Campanhas Programadas <button onclick="carregarFila()" style="width: auto; padding: 8px 15px; font-size: 13px; margin: 0; background: #34b7f1;">🔄 Atualizar Fila</button></h2>
+        <h2>📅 Fila de Campanhas <button onclick="carregarFila()" style="width: auto; padding: 8px 15px; font-size: 13px; margin: 0; background: #34b7f1;">🔄 Atualizar Fila</button></h2>
         <div id="filaContainer">
           <p style="text-align: center; color: #666;">Carregando campanhas...</p>
         </div>
@@ -61,7 +59,7 @@
     </div>
 
     <script>
-      async function agendarCampanha() {
+      function executarAgendamento() {
         var nome = document.getElementById('nomeCampanha').value;
         var destino = document.getElementById('destino').value;
         var mensagem = document.getElementById('mensagem').value;
@@ -76,62 +74,65 @@
         }
 
         btn.disabled = true;
-        btn.innerText = 'Processando arquivos e agendando...';
+        btn.innerText = 'Processando e salvando... Aguarde...';
         status.style.color = '#075e54';
-        status.innerText = 'Subindo imagens para o Google Drive...';
+        status.innerText = 'Enviando arquivos e dados...';
 
-        try {
-          var arquivosBase64 = [];
-          if (inputImagens.files.length > 0) {
-            for (var i = 0; i < inputImagens.files.length; i++) {
-              var file = inputImagens.files[i];
-              var base64 = await toBase64(file);
-              arquivosBase64.push({
-                nome: file.name,
-                mimeType: file.type,
-                bytes: base64.split(',')[1]
-              });
-            }
-          }
-
-          // Primeiro faz o upload das imagens
-          google.script.run.withSuccessHandler(function(urlsFotos) {
-            
-            var dadosCampanha = {
-              nomeCampanha: nome,
-              destino: destino,
-              mensagem: mensagem,
-              imagensUrls: urlsFotos,
-              dataHora: dataHora
-            };
-
-            // Depois salva a campanha na planilha
-            google.script.run.withSuccessHandler(function(resposta) {
+        converterArquivos(inputImagens.files).then(function(arquivosBase64) {
+          google.script.run
+            .withSuccessHandler(function(resposta) {
               status.style.color = 'green';
               status.innerText = resposta;
               document.getElementById('formCampanha').reset();
+              document.getElementById('nomeCampanha').value = 'Anny Óptica — Web e Tráfego';
+              document.getElementById('destino').value = '5584921466248';
               btn.disabled = false;
               btn.innerText = 'Programar Campanha';
               carregarFila();
               setTimeout(() => status.innerText = '', 4000);
-            }).salvarCampanha(dadosCampanha);
-
-          }).processarUploadImagens(arquivosBase64);
-
-        } catch (err) {
+            })
+            .withFailureHandler(function(erro) {
+              status.style.color = 'red';
+              status.innerText = 'Erro: ' + (erro.message || erro);
+              btn.disabled = false;
+              btn.innerText = 'Programar Campanha';
+            })
+            .processarECriarCampanha(nome, destino, mensagem, arquivosBase64, dataHora);
+        }).catch(function(err) {
           status.style.color = 'red';
-          status.innerText = 'Erro: ' + err;
+          status.innerText = 'Erro ao ler arquivos: ' + err;
           btn.disabled = false;
           btn.innerText = 'Programar Campanha';
-        }
+        });
       }
 
-      function toBase64(file) {
+      function converterArquivos(files) {
+        return new Promise(async (resolve, reject) => {
+          var listaBase64 = [];
+          if (!files || files.length === 0) return resolve(listaBase64);
+          try {
+            for (var i = 0; i < files.length; i++) {
+              var f = files[i];
+              var b64 = await fileToBase64(f);
+              listaBase64.push({
+                nome: f.name,
+                mimeType: f.type,
+                bytes: b64.split(',')[1]
+              });
+            }
+            resolve(listaBase64);
+          } catch(e) {
+            reject(e);
+          }
+        });
+      }
+
+      function fileToBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(file);
           reader.onload = () => resolve(reader.result);
-          reader.onerror = error => reject(error);
+          reader.onerror = err => reject(err);
         });
       }
 
@@ -152,9 +153,9 @@
             var fotosHtml = '';
             if (item.imagens) {
               var links = item.imagens.split(' | ');
-              fotosHtml = '<div style="margin: 8px 0;"><strong>Mídias:</strong> ';
+              fotosHtml = '<div style="margin: 8px 0;"><strong>Mídias enviadas:</strong> ';
               links.forEach((link, index) => {
-                fotosHtml += `<a href="${link}" target="_blank" style="color: #0288d1; margin-right: 10px;">[Foto ${index+1}]</a>`;
+                fotosHtml += `<a href="${link}" target="_blank" style="color: #0288d1; margin-right: 10px;">[Ver Foto ${index+1}]</a>`;
               });
               fotosHtml += '</div>';
             }
