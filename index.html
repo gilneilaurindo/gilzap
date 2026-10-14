@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <title>Disparador WhatsApp</title>
+    <style>
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; margin: 0; padding: 20px; }
+      .container { max-width: 600px; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin: auto; }
+      h2 { color: #075e54; margin-top: 0; text-align: center; }
+      label { font-weight: bold; display: block; margin-top: 12px; color: #128c7e; }
+      input, textarea { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+      button { background-color: #25d366; color: white; border: none; padding: 12px; width: 100%; margin-top: 18px; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
+      button:hover { background-color: #1ebe5d; }
+      .card-pendente { background: #f0f2f5; border-left: 5px solid #25d366; padding: 15px; margin-top: 15px; border-radius: 5px; }
+      .btn-disparar { background-color: #075e54; margin-top: 8px; }
+      .btn-copiar { background-color: #34b7f1; margin-top: 5px; }
+      hr { margin: 25px 0; border: 0; border-top: 1px solid #ddd; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Agendar Disparo WhatsApp</h2>
+      
+      <form id="formAgendamento">
+        <label>Nome do Contato ou Grupo:</label>
+        <input type="text" id="nome" placeholder="Ex: Grupo de Vendas" required>
+
+        <label>Telefone (com DDD) ou Link do Grupo:</label>
+        <input type="text" id="destino" placeholder="Ex: 5511999999999 ou https://chat.whatsapp.com/..." required>
+
+        <label>Texto da Mensagem:</label>
+        <textarea id="mensagem" rows="3" placeholder="Digite seu texto aqui..." required></textarea>
+
+        <label>Link da Foto/Mídia (Opcional):</label>
+        <input type="url" id="linkFoto" placeholder="https://exemplo.com/imagem.jpg">
+
+        <label>Data e Hora do Disparo:</label>
+        <input type="datetime-local" id="dataHora" required>
+
+        <button type="button" onclick="enviarFormulario()">Agendar Mensagem</button>
+      </form>
+      
+      <div id="statusForm" style="color: green; text-align: center; margin-top: 10px;"></div>
+
+      <hr>
+
+      <h2>Disparos Prontos no Horário</h2>
+      <button onclick="carregarPendentes()" style="background-color: #34b7f1;">Atualizar Lista de Disparos</button>
+      <div id="listaPendentes"></div>
+    </div>
+
+    <script>
+      function enviarFormulario() {
+        var nome = document.getElementById('nome').value;
+        var destino = document.getElementById('destino').value;
+        var mensagem = document.getElementById('mensagem').value;
+        var linkFoto = document.getElementById('linkFoto').value;
+        var dataHora = document.getElementById('dataHora').value;
+
+        if(!nome || !destino || !mensagem || !dataHora) {
+          alert('Preencha os campos obrigatórios!');
+          return;
+        }
+
+        google.script.run.withSuccessHandler(function(resposta) {
+          document.getElementById('statusForm').innerText = resposta;
+          document.getElementById('formAgendamento').reset();
+          setTimeout(() => document.getElementById('statusForm').innerText = '', 3000);
+        }).salvarAgendamento(nome, destino, mensagem, linkFoto, dataHora);
+      }
+
+      function carregarPendentes() {
+        google.script.run.withSuccessHandler(function(lista) {
+          var container = document.getElementById('listaPendentes');
+          container.innerHTML = '';
+
+          if (lista.length === 0) {
+            container.innerHTML = '<p style="text-align:center;">Nenhum disparo pendente no momento.</p>';
+            return;
+          }
+
+          lista.forEach(function(item) {
+            var card = document.createElement('div');
+            card.className = 'card-pendente';
+            
+            var textoCompleto = item.mensagem;
+            if(item.linkFoto) {
+              textoCompleto += '\n\nFoto: ' + item.linkFoto;
+            }
+
+            card.innerHTML = `
+              <strong>Destino:</strong> ${item.nome}<br>
+              <strong>Mensagem:</strong> ${item.mensagem}<br>
+              ${item.linkFoto ? '<strong>Foto:</strong> <a href="' + item.linkFoto + '" target="_blank">Ver Imagem</a><br>' : ''}
+              <button class="btn-disparar" onclick="disparar('${item.destino}', '${encodeURIComponent(textoCompleto)}', ${item.linha})">Abrir e Enviar no WhatsApp</button>
+            `;
+            container.appendChild(card);
+          });
+        }).obterAgendamentosProntos();
+      }
+
+      function disparar(destino, textoCodificado, linha) {
+        var url = '';
+        if (destino.includes('chat.whatsapp.com')) {
+          url = destino;
+        } else {
+          var num = destino.replace(/\D/g, '');
+          url = 'https://api.whatsapp.com/send?phone=' + num + '&text=' + textoCodificado;
+        }
+        
+        window.open(url, '_blank');
+
+        google.script.run.withSuccessHandler(function() {
+          carregarPendentes();
+        }).marcarComoEnviado(linha);
+      }
+
+      // Carrega os disparos ao abrir a página
+      window.onload = carregarPendentes;
+    </script>
+  </body>
+</html>
