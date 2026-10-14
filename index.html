@@ -14,24 +14,28 @@
       button:hover { background-color: #1ebe5d; }
       .card-pendente { background: #f0f2f5; border-left: 5px solid #25d366; padding: 15px; margin-top: 15px; border-radius: 5px; }
       .btn-disparar { background-color: #075e54; margin-top: 8px; }
+      .btn-copiar { background-color: #34b7f1; margin-top: 6px; }
+      .btn-foto { background-color: #128c7e; margin-top: 6px; }
       hr { margin: 25px 0; border: 0; border-top: 1px solid #ddd; }
+      .botoes-acao { display: flex; gap: 8px; flex-wrap: wrap; }
+      .botoes-acao button { flex: 1; min-width: 140px; }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2>Agendar Disparo WhatsApp</h2>
+      <h2>Agendar Disparo (Grupo ou Contato)</h2>
       
       <form id="formAgendamento">
-        <label>Nome do Contato ou Grupo:</label>
-        <input type="text" id="nome" placeholder="Ex: Meu Número / Grupo" value="Gil" required>
+        <label>Nome da Conversa/Grupo:</label>
+        <input type="text" id="nome" value="Anny Óptica — Web e Tráfego" required>
 
         <label>Telefone (com DDD) ou Link do Grupo:</label>
-        <input type="text" id="destino" value="5584921466248" required>
+        <input type="text" id="destino" placeholder="Ex: https://chat.whatsapp.com/... ou 5584921466248" required>
 
         <label>Texto da Mensagem:</label>
-        <textarea id="mensagem" rows="3" placeholder="Digite seu texto aqui..." required></textarea>
+        <textarea id="mensagem" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
 
-        <label>Link da Foto/Mídia (Opcional):</label>
+        <label>Link da Foto/Imagem (Opcional):</label>
         <input type="url" id="linkFoto" placeholder="https://exemplo.com/imagem.jpg">
 
         <label>Data e Hora do Disparo:</label>
@@ -44,8 +48,8 @@
 
       <hr>
 
-      <h2>Disparos Prontos no Horário</h2>
-      <button onclick="carregarPendentes()" style="background-color: #34b7f1;">Atualizar Lista de Disparos</button>
+      <h2>Disparos Agendados / Prontos</h2>
+      <button onclick="carregarPendentes()" style="background-color: #34b7f1; margin-top:0;">Atualizar Lista de Disparos</button>
       <div id="listaPendentes"></div>
     </div>
 
@@ -65,8 +69,7 @@
         google.script.run.withSuccessHandler(function(resposta) {
           document.getElementById('statusForm').innerText = resposta;
           document.getElementById('formAgendamento').reset();
-          document.getElementById('destino').value = '5584921466248'; // Mantém o número padrão
-          document.getElementById('nome').value = 'Gil';
+          document.getElementById('nome').value = 'Anny Óptica — Web e Tráfego';
           setTimeout(() => document.getElementById('statusForm').innerText = '', 3000);
         }).salvarAgendamento(nome, destino, mensagem, linkFoto, dataHora);
       }
@@ -84,24 +87,31 @@
           lista.forEach(function(item) {
             var card = document.createElement('div');
             card.className = 'card-pendente';
-            
-            var textoCompleto = item.mensagem;
-            if(item.linkFoto) {
-              textoCompleto += '\n\nFoto: ' + item.linkFoto;
-            }
 
             card.innerHTML = `
               <strong>Destino:</strong> ${item.nome}<br>
               <strong>Mensagem:</strong> ${item.mensagem}<br>
-              ${item.linkFoto ? '<strong>Foto:</strong> <a href="' + item.linkFoto + '" target="_blank">Ver Imagem</a><br>' : ''}
-              <button class="btn-disparar" onclick="disparar('${item.destino}', '${encodeURIComponent(textoCompleto)}', ${item.linha})">Abrir e Enviar no WhatsApp</button>
+              ${item.linkFoto ? '<strong>Foto:</strong> <a href="' + item.linkFoto + '" target="_blank">Ver / Baixar Imagem</a><br>' : ''}
+              
+              <div class="botoes-acao">
+                <button class="btn-copiar" onclick="copiarTexto('${encodeURIComponent(item.mensagem)}')">📋 1. Copiar Texto</button>
+                ${item.linkFoto ? `<button class="btn-foto" onclick="window.open('${item.linkFoto}', '_blank')">🖼️ Ver Foto</button>` : ''}
+                <button class="btn-disparar" onclick="abrirEConcluir('${item.destino}', '${encodeURIComponent(item.mensagem)}', ${item.linha})">🚀 2. Abrir Grupo / Chat</button>
+              </div>
             `;
             container.appendChild(card);
           });
         }).obterAgendamentosProntos();
       }
 
-      function disparar(destino, textoCodificado, linha) {
+      function copiarTexto(textoCodificado) {
+        var texto = decodeURIComponent(textoCodificado);
+        navigator.clipboard.writeText(texto).then(function() {
+          alert('Texto copiado com sucesso! Agora é só colar (Ctrl+V) no WhatsApp.');
+        });
+      }
+
+      function abrirEConcluir(destino, textoCodificado, linha) {
         var url = '';
         if (destino.includes('chat.whatsapp.com')) {
           url = destino;
