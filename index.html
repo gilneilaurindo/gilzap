@@ -14,7 +14,6 @@
       button:hover { background-color: #1ebe5d; }
       .card-pendente { background: #f0f2f5; border-left: 5px solid #25d366; padding: 15px; margin-top: 15px; border-radius: 5px; }
       .btn-disparar { background-color: #075e54; margin-top: 8px; }
-      .btn-copiar { background-color: #34b7f1; margin-top: 5px; }
       hr { margin: 25px 0; border: 0; border-top: 1px solid #ddd; }
     </style>
   </head>
@@ -24,10 +23,10 @@
       
       <form id="formAgendamento">
         <label>Nome do Contato ou Grupo:</label>
-        <input type="text" id="nome" placeholder="Ex: Grupo de Vendas" required>
+        <input type="text" id="nome" placeholder="Ex: Meu Número / Grupo" value="Gil" required>
 
         <label>Telefone (com DDD) ou Link do Grupo:</label>
-        <input type="text" id="destino" placeholder="Ex: 5511999999999 ou https://chat.whatsapp.com/..." required>
+        <input type="text" id="destino" value="5584921466248" required>
 
         <label>Texto da Mensagem:</label>
         <textarea id="mensagem" rows="3" placeholder="Digite seu texto aqui..." required></textarea>
@@ -66,6 +65,8 @@
         google.script.run.withSuccessHandler(function(resposta) {
           document.getElementById('statusForm').innerText = resposta;
           document.getElementById('formAgendamento').reset();
+          document.getElementById('destino').value = '5584921466248'; // Mantém o número padrão
+          document.getElementById('nome').value = 'Gil';
           setTimeout(() => document.getElementById('statusForm').innerText = '', 3000);
         }).salvarAgendamento(nome, destino, mensagem, linkFoto, dataHora);
       }
@@ -116,7 +117,6 @@
         }).marcarComoEnviado(linha);
       }
 
-      // Carrega os disparos ao abrir a página
       window.onload = carregarPendentes;
     </script>
   </body>
