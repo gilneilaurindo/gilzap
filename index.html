@@ -3,129 +3,130 @@
   <head>
     <base target="_top">
     <meta charset="utf-8">
-    <title>Disparador WhatsApp</title>
+    <title>Painel Profissional - WhatsApp Marketing</title>
     <style>
-      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e5ddd5; margin: 0; padding: 20px; }
-      .container { max-width: 600px; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); margin: auto; }
-      h2 { color: #075e54; margin-top: 0; text-align: center; }
-      label { font-weight: bold; display: block; margin-top: 12px; color: #128c7e; }
-      input, textarea { width: 100%; padding: 10px; margin-top: 4px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-      button { background-color: #25d366; color: white; border: none; padding: 12px; width: 100%; margin-top: 18px; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
+      :root { --primary: #075e54; --secondary: #128c7e; --light: #f4f7f6; --accent: #25d366; }
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--light); margin: 0; padding: 20px; color: #333; }
+      .wrapper { max-width: 800px; margin: auto; }
+      .card { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); margin-bottom: 25px; }
+      h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--light); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+      label { font-weight: 600; display: block; margin-top: 15px; color: var(--secondary); font-size: 14px; }
+      input, textarea, select { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ccd0d5; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+      button { background-color: var(--accent); color: white; border: none; padding: 14px; width: 100%; margin-top: 25px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
       button:hover { background-color: #1ebe5d; }
-      .card-pendente { background: #f0f2f5; border-left: 5px solid #25d366; padding: 15px; margin-top: 15px; border-radius: 5px; }
-      .btn-disparar { background-color: #075e54; margin-top: 8px; }
-      .btn-copiar { background-color: #34b7f1; margin-top: 6px; }
-      .btn-foto { background-color: #128c7e; margin-top: 6px; text-decoration: none; display: inline-block; padding: 8px 12px; color: white; border-radius: 4px; text-align: center; font-size: 14px; }
-      hr { margin: 25px 0; border: 0; border-top: 1px solid #ddd; }
-      .botoes-acao { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-      .botoes-acao button { flex: 1; min-width: 140px; }
-      .fotos-container { margin-top: 8px; }
+      .campanha-item { background: #f8f9fa; border-left: 5px solid var(--accent); padding: 18px; margin-top: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.04); }
+      .acoes { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+      .acoes button { flex: 1; margin-top: 0; padding: 10px; font-size: 14px; }
+      .btn-copiar { background-color: #34b7f1; }
+      .btn-enviar { background-color: var(--primary); }
+      .tag { background: #e1f5fe; color: #0288d1; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h2>Agendar Disparo WhatsApp</h2>
+    <div class="wrapper">
       
-      <form id="formAgendamento">
-        <label>Nome da Conversa/Grupo:</label>
-        <input type="text" id="nome" value="Anny Óptica — Web e Tráfego" required>
+      <!-- PAINEL DE CRIAÇÃO -->
+      <div class="card">
+        <h2>🚀 Nova Campanha de Disparo <span class="tag">Modo Profissional</span></h2>
+        
+        <form id="formCampanha">
+          <label>Nome da Campanha (Identificação interna):</label>
+          <input type="text" id="nomeCampanha" placeholder="Ex: Promoção Relâmpago Óculos 50% OFF" required>
 
-        <label>Telefone (apenas números com DDD) ou Link do Grupo:</label>
-        <input type="text" id="destino" placeholder="Ex: https://chat.whatsapp.com/... ou 5584921466248" value="5584921466248" required>
+          <label>Destinatário (Telefone com DDD ou Link do Grupo do WhatsApp):</label>
+          <input type="text" id="destino" placeholder="Ex: 5584921466248 ou https://chat.whatsapp.com/..." required>
 
-        <label>Texto da Mensagem:</label>
-        <textarea id="mensagem" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
+          <label>Texto da Mensagem (Suporta formatação e emojis):</label>
+          <textarea id="mensagem" rows="5" placeholder="Olá *cliente*! Confira nossas novidades..." required></textarea>
 
-        <label>Subir Imagens/Fotos (Opcional):</label>
-        <input type="file" id="fotos" accept="image/*" multiple>
+          <label>Anexar Imagens / Criativos (Pode selecionar várias):</label>
+          <input type="file" id="imagens" accept="image/*" multiple>
 
-        <label>Data e Hora do Disparo:</label>
-        <input type="datetime-local" id="dataHora" required>
+          <label>Data e Hora Programada para o Disparo:</label>
+          <input type="datetime-local" id="dataHora" required>
 
-        <button type="button" id="btnSalvar" onclick="enviarFormulario()">Agendar e Processar Fotos</button>
-      </form>
-      
-      <div id="statusForm" style="text-align: center; margin-top: 10px; font-weight: bold;"></div>
+          <button type="button" id="btnSalvar" onclick="agendarCampanha()">Programar Campanha</button>
+        </form>
+        <div id="statusMsg" style="text-align: center; margin-top: 15px; font-weight: bold;"></div>
+      </div>
 
-      <hr>
+      <!-- FILA DE CAMPANHAS PROGRAMADAS -->
+      <div class="card">
+        <h2>📅 Fila de Campanhas Programadas <button onclick="carregarFila()" style="width: auto; padding: 8px 15px; font-size: 13px; margin: 0; background: #34b7f1;">🔄 Atualizar Fila</button></h2>
+        <div id="filaContainer">
+          <p style="text-align: center; color: #666;">Carregando campanhas...</p>
+        </div>
+      </div>
 
-      <h2>Disparos Agendados / Prontos</h2>
-      <button onclick="carregarPendentes()" style="background-color: #34b7f1; margin-top:0;">Atualizar Lista de Disparos</button>
-      <div id="listaPendentes"></div>
     </div>
 
     <script>
-      function enviarFormulario() {
-        var nome = document.getElementById('nome').value;
+      async function agendarCampanha() {
+        var nome = document.getElementById('nomeCampanha').value;
         var destino = document.getElementById('destino').value;
         var mensagem = document.getElementById('mensagem').value;
-        var inputFotos = document.getElementById('fotos');
+        var inputImagens = document.getElementById('imagens');
         var dataHora = document.getElementById('dataHora').value;
-        var btnSalvar = document.getElementById('btnSalvar');
-        var statusDiv = document.getElementById('statusForm');
+        var btn = document.getElementById('btnSalvar');
+        var status = document.getElementById('statusMsg');
 
         if(!nome || !destino || !mensagem || !dataHora) {
-          alert('Preencha os campos obrigatórios!');
+          alert('Por favor, preencha todos os campos obrigatórios.');
           return;
         }
 
-        btnSalvar.disabled = true;
-        btnSalvar.innerText = 'Enviando... Aguarde...';
-        statusDiv.style.color = '#075e54';
-        statusDiv.innerText = 'Processando imagens e salvando...';
+        btn.disabled = true;
+        btn.innerText = 'Processando arquivos e agendando...';
+        status.style.color = '#075e54';
+        status.innerText = 'Subindo imagens para o Google Drive...';
 
-        processarArquivos(inputFotos.files).then(function(arquivosBase64) {
-          google.script.run
-            .withSuccessHandler(function(resposta) {
-              statusDiv.style.color = 'green';
-              statusDiv.innerText = resposta;
-              document.getElementById('formAgendamento').reset();
-              document.getElementById('nome').value = 'Anny Óptica — Web e Tráfego';
-              document.getElementById('destino').value = '5584921466248';
-              btnSalvar.disabled = false;
-              btnSalvar.innerText = 'Agendar e Processar Fotos';
-              carregarPendentes();
-              setTimeout(() => statusDiv.innerText = '', 4000);
-            })
-            .withFailureHandler(function(erro) {
-              statusDiv.style.color = 'red';
-              statusDiv.innerText = 'Erro: ' + (erro.message || erro);
-              btnSalvar.disabled = false;
-              btnSalvar.innerText = 'Agendar e Processar Fotos';
-            })
-            .salvarAgendamentoComUpload(nome, destino, mensagem, arquivosBase64, dataHora);
-        }).catch(function(err) {
-          statusDiv.style.color = 'red';
-          statusDiv.innerText = 'Erro ao ler arquivos: ' + err;
-          btnSalvar.disabled = false;
-          btnSalvar.innerText = 'Agendar e Processar Fotos';
-        });
-      }
-
-      function processarArquivos(files) {
-        return new Promise(async (resolve, reject) => {
+        try {
           var arquivosBase64 = [];
-          if (!files || files.length === 0) {
-            return resolve(arquivosBase64);
-          }
-          try {
-            for (var i = 0; i < files.length; i++) {
-              var file = files[i];
-              var base64 = await converterParaBase64(file);
+          if (inputImagens.files.length > 0) {
+            for (var i = 0; i < inputImagens.files.length; i++) {
+              var file = inputImagens.files[i];
+              var base64 = await toBase64(file);
               arquivosBase64.push({
                 nome: file.name,
                 mimeType: file.type,
                 bytes: base64.split(',')[1]
               });
             }
-            resolve(arquivosBase64);
-          } catch(e) {
-            reject(e);
           }
-        });
+
+          // Primeiro faz o upload das imagens
+          google.script.run.withSuccessHandler(function(urlsFotos) {
+            
+            var dadosCampanha = {
+              nomeCampanha: nome,
+              destino: destino,
+              mensagem: mensagem,
+              imagensUrls: urlsFotos,
+              dataHora: dataHora
+            };
+
+            // Depois salva a campanha na planilha
+            google.script.run.withSuccessHandler(function(resposta) {
+              status.style.color = 'green';
+              status.innerText = resposta;
+              document.getElementById('formCampanha').reset();
+              btn.disabled = false;
+              btn.innerText = 'Programar Campanha';
+              carregarFila();
+              setTimeout(() => status.innerText = '', 4000);
+            }).salvarCampanha(dadosCampanha);
+
+          }).processarUploadImagens(arquivosBase64);
+
+        } catch (err) {
+          status.style.color = 'red';
+          status.innerText = 'Erro: ' + err;
+          btn.disabled = false;
+          btn.innerText = 'Programar Campanha';
+        }
       }
 
-      function converterParaBase64(file) {
+      function toBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(file);
@@ -134,53 +135,53 @@
         });
       }
 
-      function carregarPendentes() {
+      function carregarFila() {
         google.script.run.withSuccessHandler(function(lista) {
-          var container = document.getElementById('listaPendentes');
+          var container = document.getElementById('filaContainer');
           container.innerHTML = '';
 
           if (!lista || lista.length === 0) {
-            container.innerHTML = '<p style="text-align:center;">Nenhum disparo pendente no momento.</p>';
+            container.innerHTML = '<p style="text-align:center; color:#666;">Nenhuma campanha pendente na fila.</p>';
             return;
           }
 
           lista.forEach(function(item) {
-            var card = document.createElement('div');
-            card.className = 'card-pendente';
+            var div = document.createElement('div');
+            div.className = 'campanha-item';
 
-            var linksHtml = '';
-            if (item.linkFoto) {
-              var links = item.linkFoto.split(' | ');
-              linksHtml = '<div class="fotos-container"><strong>Fotos enviadas:</strong><br>';
-              links.forEach(function(url, idx) {
-                linksHtml += `<a class="btn-foto" href="${url}" target="_blank">🖼️ Abrir Foto ${idx + 1}</a> `;
+            var fotosHtml = '';
+            if (item.imagens) {
+              var links = item.imagens.split(' | ');
+              fotosHtml = '<div style="margin: 8px 0;"><strong>Mídias:</strong> ';
+              links.forEach((link, index) => {
+                fotosHtml += `<a href="${link}" target="_blank" style="color: #0288d1; margin-right: 10px;">[Foto ${index+1}]</a>`;
               });
-              linksHtml += '</div>';
+              fotosHtml += '</div>';
             }
 
-            card.innerHTML = `
-              <strong>Destino:</strong> ${item.nome}<br>
-              <strong>Mensagem:</strong> ${item.mensagem}<br>
-              ${linksHtml}
+            div.innerHTML = `
+              <strong>📢 ${item.nomeCampanha}</strong><br>
+              <small style="color: #555;">Agendado para: <b>${item.dataHora}</b> | Destino: ${item.destino}</small><br>
+              <p style="margin: 6px 0; background: white; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">${item.mensagem}</p>
+              ${fotosHtml}
               
-              <div class="botoes-acao">
-                <button class="btn-copiar" onclick="copiarTexto('${encodeURIComponent(item.mensagem)}')">📋 1. Copiar Texto</button>
-                <button class="btn-disparar" onclick="abrirEConcluir('${item.destino}', '${encodeURIComponent(item.mensagem)}', ${item.linha})">🚀 2. Abrir Grupo / Chat</button>
+              <div class="acoes">
+                <button class="btn-copiar" onclick="copiarTexto('${encodeURIComponent(item.mensagem)}')">📋 Copiar Mensagem</button>
+                <button class="btn-enviar" onclick="dispararCampanha('${item.destino}', '${encodeURIComponent(item.mensagem)}', ${item.linha})">🚀 Abrir & Disparar</button>
               </div>
             `;
-            container.appendChild(card);
+            container.appendChild(div);
           });
-        }).obterAgendamentosProntos();
+        }).obterCampanhasPendentes();
       }
 
       function copiarTexto(textoCodificado) {
-        var texto = decodeURIComponent(textoCodificado);
-        navigator.clipboard.writeText(texto).then(function() {
-          alert('Texto copiado com sucesso! Agora é só colar (Ctrl+V) no WhatsApp.');
+        navigator.clipboard.writeText(decodeURIComponent(textoCodificado)).then(() => {
+          alert('Mensagem copiada para a área de transferência!');
         });
       }
 
-      function abrirEConcluir(destino, textoCodificado, linha) {
+      function dispararCampanha(destino, textoCodificado, linha) {
         var url = '';
         if (destino.includes('chat.whatsapp.com')) {
           url = destino;
@@ -188,15 +189,15 @@
           var num = destino.replace(/\D/g, '');
           url = 'https://api.whatsapp.com/send?phone=' + num + '&text=' + textoCodificado;
         }
-        
+
         window.open(url, '_blank');
 
         google.script.run.withSuccessHandler(function() {
-          carregarPendentes();
-        }).marcarComoEnviado(linha);
+          carregarFila();
+        }).concluirCampanha(linha);
       }
 
-      window.onload = carregarPendentes;
+      window.onload = carregarFila;
     </script>
   </body>
 </html>
