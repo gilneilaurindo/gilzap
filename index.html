@@ -55,7 +55,7 @@
     </div>
 
     <script>
-      async function enviarFormulario() {
+      function enviarFormulario() {
         var nome = document.getElementById('nome').value;
         var destino = document.getElementById('destino').value;
         var mensagem = document.getElementById('mensagem').value;
@@ -72,22 +72,9 @@
         btnSalvar.disabled = true;
         btnSalvar.innerText = 'Enviando... Aguarde...';
         statusDiv.style.color = '#075e54';
-        statusDiv.innerText = 'Processando dados e arquivos...';
+        statusDiv.innerText = 'Processando imagens e salvando...';
 
-        try {
-          var arquivosBase64 = [];
-          if (inputFotos.files.length > 0) {
-            for (var i = 0; i < inputFotos.files.length; i++) {
-              var file = inputFotos.files[i];
-              var base64 = await converterParaBase64(file);
-              arquivosBase64.push({
-                nome: file.name,
-                mimeType: file.type,
-                bytes: base64.split(',')[1]
-              });
-            }
-          }
-
+        processarArquivos(inputFotos.files).then(function(arquivosBase64) {
           google.script.run
             .withSuccessHandler(function(resposta) {
               statusDiv.style.color = 'green';
@@ -102,18 +89,40 @@
             })
             .withFailureHandler(function(erro) {
               statusDiv.style.color = 'red';
-              statusDiv.innerText = 'Erro: ' + erro.message;
+              statusDiv.innerText = 'Erro: ' + (erro.message || erro);
               btnSalvar.disabled = false;
               btnSalvar.innerText = 'Agendar e Processar Fotos';
             })
             .salvarAgendamentoComUpload(nome, destino, mensagem, arquivosBase64, dataHora);
-
-        } catch (err) {
+        }).catch(function(err) {
           statusDiv.style.color = 'red';
-          statusDiv.innerText = 'Erro ao processar imagem: ' + err.message;
+          statusDiv.innerText = 'Erro ao ler arquivos: ' + err;
           btnSalvar.disabled = false;
           btnSalvar.innerText = 'Agendar e Processar Fotos';
-        }
+        });
+      }
+
+      function processarArquivos(files) {
+        return new Promise(async (resolve, reject) => {
+          var arquivosBase64 = [];
+          if (!files || files.length === 0) {
+            return resolve(arquivosBase64);
+          }
+          try {
+            for (var i = 0; i < files.length; i++) {
+              var file = files[i];
+              var base64 = await converterParaBase64(file);
+              arquivosBase64.push({
+                nome: file.name,
+                mimeType: file.type,
+                bytes: base64.split(',')[1]
+              });
+            }
+            resolve(arquivosBase64);
+          } catch(e) {
+            reject(e);
+          }
+        });
       }
 
       function converterParaBase64(file) {
@@ -130,7 +139,7 @@
           var container = document.getElementById('listaPendentes');
           container.innerHTML = '';
 
-          if (lista.length === 0) {
+          if (!lista || lista.length === 0) {
             container.innerHTML = '<p style="text-align:center;">Nenhum disparo pendente no momento.</p>';
             return;
           }
@@ -176,7 +185,7 @@
         if (destino.includes('chat.whatsapp.com')) {
           url = destino;
         } else {
-          var num = destino.replace(/\Dg/g, '');
+          var num = destino.replace(/\D/g, '');
           url = 'https://api.whatsapp.com/send?phone=' + num + '&text=' + textoCodificado;
         }
         
