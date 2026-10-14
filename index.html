@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <meta charset="utf-8">
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Profissional - WhatsApp Marketing</title>
     <style>
       :root { --primary: #075e54; --secondary: #128c7e; --light: #f4f7f6; --accent: #25d366; }
@@ -21,27 +21,27 @@
       .btn-enviar { background-color: var(--primary); }
       .tag { background: #e1f5fe; color: #0288d1; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="wrapper">
       
       <div class="card">
-        <h2>🚀 Nova Campanha <span class="tag">WhatsApp Profissional</span></h2>
+        <h2>🚀 Nova Campanha <span class="tag">Vercel + Google Sheets</span></h2>
         
         <form id="formCampanha">
-          <label>Nome da Campanha (Identificação interna):</label>
+          <label>Nome da Campanha:</label>
           <input type="text" id="nomeCampanha" value="Anny Óptica — Web e Tráfego" required>
 
-          <label>Destinatário (Telefone com DDD ou Link do Grupo do WhatsApp):</label>
-          <input type="text" id="destino" value="5584921466248" placeholder="Ex: 5584921466248 ou https://chat.whatsapp.com/..." required>
+          <label>Destinatário (Telefone com DDD ou Link do Grupo):</label>
+          <input type="text" id="destino" value="5584921466248" required>
 
-          <label>Texto da Mensagem (Suporta formatação e emojis):</label>
-          <textarea id="mensagem" rows="4" placeholder="Digite sua mensagem aqui..." required></textarea>
+          <label>Texto da Mensagem:</label>
+          <textarea id="mensagem" rows="4" placeholder="Digite sua mensagem..." required></textarea>
 
-          <label>Anexar Imagens / Criativos (Opcional - pode selecionar várias):</label>
+          <label>Anexar Imagens / Criativos (Opcional):</label>
           <input type="file" id="imagens" accept="image/*" multiple>
 
-          <label>Data e Hora Programada para o Disparo:</label>
+          <label>Data e Hora Programada:</label>
           <input type="datetime-local" id="dataHora" required>
 
           <button type="button" id="btnSalvar" onclick="executarAgendamento()">Programar Campanha</button>
@@ -59,7 +59,10 @@
     </div>
 
     <script>
-      function executarAgendamento() {
+      // URL do seu Web App do Google Apps Script atualizada
+      const urlAPI = "https://script.google.com/macros/s/AKfycbz1LzkjbEKAUR1w5YXfOSYzp3qqYoEHjcIBqexnS1yY6RWhcif-XSlLWrw-WA4kvdJr2g/exec";
+
+      async function executarAgendamento() {
         var nome = document.getElementById('nomeCampanha').value;
         var destino = document.getElementById('destino').value;
         var mensagem = document.getElementById('mensagem').value;
@@ -69,62 +72,63 @@
         var status = document.getElementById('statusMsg');
 
         if(!nome || !destino || !mensagem || !dataHora) {
-          alert('Por favor, preencha todos os campos obrigatórios.');
+          alert('Preencha os campos obrigatórios.');
           return;
         }
 
         btn.disabled = true;
-        btn.innerText = 'Processando e salvando... Aguarde...';
+        btn.innerText = 'Salvando no Google Sheets...';
         status.style.color = '#075e54';
-        status.innerText = 'Enviando arquivos e dados...';
+        status.innerText = 'Processando dados e imagens...';
 
-        converterArquivos(inputImagens.files).then(function(arquivosBase64) {
-          google.script.run
-            .withSuccessHandler(function(resposta) {
-              status.style.color = 'green';
-              status.innerText = resposta;
-              document.getElementById('formCampanha').reset();
-              document.getElementById('nomeCampanha').value = 'Anny Óptica — Web e Tráfego';
-              document.getElementById('destino').value = '5584921466248';
-              btn.disabled = false;
-              btn.innerText = 'Programar Campanha';
-              carregarFila();
-              setTimeout(() => status.innerText = '', 4000);
-            })
-            .withFailureHandler(function(erro) {
-              status.style.color = 'red';
-              status.innerText = 'Erro: ' + (erro.message || erro);
-              btn.disabled = false;
-              btn.innerText = 'Programar Campanha';
-            })
-            .processarECriarCampanha(nome, destino, mensagem, arquivosBase64, dataHora);
-        }).catch(function(err) {
-          status.style.color = 'red';
-          status.innerText = 'Erro ao ler arquivos: ' + err;
-          btn.disabled = false;
-          btn.innerText = 'Programar Campanha';
-        });
-      }
-
-      function converterArquivos(files) {
-        return new Promise(async (resolve, reject) => {
-          var listaBase64 = [];
-          if (!files || files.length === 0) return resolve(listaBase64);
-          try {
-            for (var i = 0; i < files.length; i++) {
-              var f = files[i];
+        try {
+          var imagensBase64 = [];
+          if (inputImagens.files.length > 0) {
+            for (var i = 0; i < inputImagens.files.length; i++) {
+              var f = inputImagens.files[i];
               var b64 = await fileToBase64(f);
-              listaBase64.push({
+              imagensBase64.push({
                 nome: f.name,
                 mimeType: f.type,
                 bytes: b64.split(',')[1]
               });
             }
-            resolve(listaBase64);
-          } catch(e) {
-            reject(e);
           }
-        });
+
+          var payload = {
+            acao: 'salvarCampanha',
+            nomeCampanha: nome,
+            destino: destino,
+            mensagem: mensagem,
+            imagensBase64: imagensBase64,
+            dataHora: dataHora
+          };
+
+          let response = await fetch(urlAPI, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+
+          let resultado = await response.json();
+
+          if (resultado.sucesso) {
+            status.style.color = 'green';
+            status.innerText = resultado.mensagem;
+            document.getElementById('formCampanha').reset();
+            carregarFila();
+          } else {
+            status.style.color = 'red';
+            status.innerText = 'Erro: ' + resultado.erro;
+          }
+
+        } catch (err) {
+          status.style.color = 'red';
+          status.innerText = 'Erro de conexão: ' + err;
+        }
+
+        btn.disabled = false;
+        btn.innerText = 'Programar Campanha';
+        setTimeout(() => status.innerText = '', 4000);
       }
 
       function fileToBase64(file) {
@@ -136,11 +140,15 @@
         });
       }
 
-      function carregarFila() {
-        google.script.run.withSuccessHandler(function(lista) {
-          var container = document.getElementById('filaContainer');
-          container.innerHTML = '';
+      async function carregarFila() {
+        var container = document.getElementById('filaContainer');
+        container.innerHTML = '<p style="text-align:center; color:#666;">Carregando...</p>';
 
+        try {
+          let response = await fetch(urlAPI + '?acao=obterFila');
+          let lista = await response.json();
+
+          container.innerHTML = '';
           if (!lista || lista.length === 0) {
             container.innerHTML = '<p style="text-align:center; color:#666;">Nenhuma campanha pendente na fila.</p>';
             return;
@@ -153,7 +161,7 @@
             var fotosHtml = '';
             if (item.imagens) {
               var links = item.imagens.split(' | ');
-              fotosHtml = '<div style="margin: 8px 0;"><strong>Mídias enviadas:</strong> ';
+              fotosHtml = '<div style="margin: 8px 0;"><strong>Mídias:</strong> ';
               links.forEach((link, index) => {
                 fotosHtml += `<a href="${link}" target="_blank" style="color: #0288d1; margin-right: 10px;">[Ver Foto ${index+1}]</a>`;
               });
@@ -173,7 +181,9 @@
             `;
             container.appendChild(div);
           });
-        }).obterCampanhasPendentes();
+        } catch (err) {
+          container.innerHTML = '<p style="text-align:center; color:red;">Erro ao carregar a fila.</p>';
+        }
       }
 
       function copiarTexto(textoCodificado) {
@@ -182,7 +192,7 @@
         });
       }
 
-      function dispararCampanha(destino, textoCodificado, linha) {
+      async function dispararCampanha(destino, textoCodificado, linha) {
         var url = '';
         if (destino.includes('chat.whatsapp.com')) {
           url = destino;
@@ -193,12 +203,15 @@
 
         window.open(url, '_blank');
 
-        google.script.run.withSuccessHandler(function() {
-          carregarFila();
-        }).concluirCampanha(linha);
+        await fetch(urlAPI, {
+          method: 'POST',
+          body: JSON.stringify({ acao: 'concluirCampanha', linha: linha })
+        });
+
+        carregarFila();
       }
 
       window.onload = carregarFila;
     </script>
-  </body>
+</body>
 </html>
